@@ -1483,15 +1483,6 @@ button.stat-pill.active{border-color:currentColor}
 
       <div id="viewAquisicoes" style="display:none" class="space-y-4">
         <div class="card">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <h3 class="text-sm font-bold uppercase tracking-wide">🧱 Frentes da Obra</h3>
-            <button id="btnNovaFrente" class="btn btn-o !text-xs">+ Nova Frente</button>
-          </div>
-          <p class="text-xs text-slate-400 mt-1">Etapas/frentes de trabalho usadas pra ligar cada item de aquisição a uma data de necessidade.</p>
-          <div id="listaFrentes" class="mt-3 space-y-1"></div>
-        </div>
-
-        <div class="card">
           <div class="flex items-center justify-between flex-wrap gap-2 mb-2">
             <h3 class="text-sm font-bold uppercase tracking-wide">📦 Itens de Aquisição</h3>
             <button id="btnNovoItemAquisicao" class="btn btn-p !text-xs">+ Novo Item</button>
@@ -1506,7 +1497,7 @@ button.stat-pill.active{border-color:currentColor}
               <thead class="bg-slate-100 dark:bg-slate-800">
                 <tr>
                   <th class="text-left p-2 font-semibold">Item</th>
-                  <th class="text-left p-2 font-semibold">Frente relacionada</th>
+                  <th class="text-left p-2 font-semibold">Serviço relacionado</th>
                   <th class="text-center p-2 font-semibold">Fornecido por</th>
                   <th class="text-center p-2 font-semibold">Necessário em obra</th>
                   <th class="text-center p-2 font-semibold">Prazo limite de pedido</th>
@@ -2558,35 +2549,12 @@ button.stat-pill.active{border-color:currentColor}
   </div>
 </div></div>
 
-<!-- ===== MODAL NOVA FRENTE ===== -->
-<div id="modalFrente" class="modal-back"><div class="modal-box">
-  <h3 class="text-lg font-bold mb-4">Nova Frente da Obra</h3>
-  <div class="space-y-3">
-    <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Nome*</label><input id="frNome" class="inp" placeholder="Ex: Fundação, Estrutura, Alvenaria..."></div>
-    <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Fase</label><input id="frFase" class="inp" placeholder="Ex: Infraestrutura, Superestrutura, Acabamento"></div>
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Início planejado</label><input type="date" id="frInicio" class="inp"></div>
-      <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Fim planejado</label><input type="date" id="frFim" class="inp"></div>
-    </div>
-    <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Predecessoras</label><div id="frPredecessorasCheck" class="space-y-1 max-h-28 overflow-y-auto border border-slate-200 dark:border-slate-800 rounded-lg p-2"></div></div>
-    <div class="grid grid-cols-2 gap-3">
-      <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Equipe responsável</label><input id="frEquipe" class="inp"></div>
-      <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Custo previsto (R$)</label><input type="number" id="frCusto" class="inp" step="0.01" min="0"></div>
-    </div>
-    <label class="flex items-center gap-2 text-xs"><input type="checkbox" id="frMarco"> É um marco da obra</label>
-  </div>
-  <div class="flex justify-end gap-2 mt-5">
-    <button id="frCancel" class="btn btn-o">Cancelar</button>
-    <button id="frSave" class="btn btn-p">Salvar</button>
-  </div>
-</div></div>
-
 <!-- ===== MODAL NOVO ITEM DE AQUISIÇÃO ===== -->
 <div id="modalAquisicao" class="modal-back"><div class="modal-box">
   <h3 class="text-lg font-bold mb-4">Novo Item de Aquisição</h3>
   <div class="space-y-3">
     <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Descrição do item*</label><input id="aqDescricao" class="inp" placeholder="Ex: Porcelanato 60x60 acetinado"></div>
-    <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Frente relacionada</label><select id="aqFrente" class="inp"><option value="">Nenhuma</option></select></div>
+    <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Serviço relacionado</label><select id="aqFrente" class="inp"><option value="">Nenhum</option></select></div>
     <div class="grid grid-cols-2 gap-3">
       <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Qtd. necessária</label><input type="number" id="aqQtd" class="inp" step="0.01" min="0"></div>
       <div><label class="text-[11px] text-slate-400 font-semibold block mb-1">Unidade</label><input id="aqUnidade" class="inp" placeholder="Ex: m², un, kg"></div>
@@ -4205,11 +4173,7 @@ function curvaSPoints(tasks,today,totPlan){
   const totExec=tasks.reduce((a,t)=>a+Math.min(Number(t.executed)||0,Number(t.totalPlanned)||0),0);
   const realPct=totPlan>0?(totExec/totPlan)*100:0;
   const totMs=maxD-minD||1;
-  const labels=[],prev=[],real=[];
-  let hojeIdx=-1;
-  for(let i=0;i<=6;i++){
-    const pt=new Date(minD.getTime()+(totMs*(i/6)));
-    labels.push(pt.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
+  function planejadoEm(pt){
     let pAt=0;
     tasks.forEach(t=>{
       const plan=Number(t.totalPlanned)||0;
@@ -4218,19 +4182,36 @@ function curvaSPoints(tasks,today,totPlan){
         if(pt>=e)pAt+=plan;else if(pt>s)pAt+=plan*((pt-s)/(e-s));
       }
     });
-    prev.push(+(totPlan>0?(pAt/totPlan)*100:0).toFixed(1));
-    // CORREÇÃO: a linha "Entregue" (real) só existe até hoje — depois disso,
-    // fica null (sem ponto), fazendo a linha realmente PARAR no gráfico, em
-    // vez de continuar reta com o valor atual (o que passava a falsa
-    // impressão de "obra estagnada" nos meses futuros).
-    if(pt<=today){
+    return +(totPlan>0?(pAt/totPlan)*100:0).toFixed(1);
+  }
+  const pontos=[];
+  for(let i=0;i<=6;i++)pontos.push(new Date(minD.getTime()+(totMs*(i/6))));
+  // CORREÇÃO: garante que "hoje" sempre apareça na curva com o valor REAL
+  // exato — antes, os 7 marcos eram fixos e igualmente espaçados, e se
+  // "hoje" caísse entre dois deles (o caso mais comum, principalmente logo
+  // no início da obra, como aconteceu na Reforma LN), o percentual
+  // realizado de verdade nunca aparecia em lugar nenhum do gráfico.
+  const jaTemHoje=pontos.some(pt=>Math.abs(pt-today)<12*3600*1000);
+  if(!jaTemHoje)pontos.push(today);
+  pontos.sort((a,b)=>a-b);
+  let hojeIdx=0,menorDif=Infinity;
+  pontos.forEach((pt,i)=>{const dif=Math.abs(pt-today);if(dif<menorDif){menorDif=dif;hojeIdx=i;}});
+  const labels=[],prev=[],real=[];
+  pontos.forEach((pt,i)=>{
+    labels.push(pt.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
+    prev.push(planejadoEm(pt));
+    if(i===hojeIdx){
+      real.push(+realPct.toFixed(1));
+    }else if(pt>today){
+      real.push(null);
+    }else{
+      // Sem histórico medido dia a dia, aproxima o realizado passado como
+      // uma rampa linear de 0% (início da obra) até o valor real de hoje —
+      // é uma estimativa visual, não um dado medido dia a dia.
       const ratio=Math.max(0,Math.min(1,(pt-minD)/((today-minD)||1)));
       real.push(+(realPct*ratio).toFixed(1));
-      hojeIdx=i;
-    }else{
-      real.push(null);
     }
-  }
+  });
   return{labels,prev,real,hojeIdx};
 }
 /* Barras Mensais (Previsto x Realizado) — complementa a Curva S acumulada
@@ -4720,33 +4701,8 @@ function calcularDataLimitePedido(dataNecessidade,leadTimeDias){
 let aqFiltroAtivo='todos';
 function renderAquisicoes(){
   const p=proj();if(!p)return;
-  if(!p.frentes)p.frentes=[];
   if(!p.aquisicoes)p.aquisicoes=[];
-  renderFrentesList();
   renderAquisicoesTable();
-}
-function renderFrentesList(){
-  const p=proj();if(!p)return;
-  const wrap=g('listaFrentes');
-  if(!p.frentes.length){wrap.innerHTML='<p class="text-xs text-slate-400 text-center py-3">Nenhuma frente cadastrada ainda.</p>';return;}
-  wrap.innerHTML=p.frentes.map(f=>{
-    const preds=(f.predecessoras||[]).map(id=>{const pf=p.frentes.find(x=>x.id===id);return pf?pf.nome:null;}).filter(Boolean);
-    return `<div class="flex items-center justify-between gap-2 p-2 rounded-lg border border-slate-200 dark:border-slate-800 text-xs">
-      <div class="min-w-0">
-        <span class="font-semibold">${f.isMarco?'🚩 ':''}${escapeHtml(f.nome)}</span>
-        ${f.fase?`<span class="text-slate-400"> · ${escapeHtml(f.fase)}</span>`:''}
-        <div class="text-slate-400 text-[10.5px] mt-0.5">${f.dataInicioPlanejada?dfmt(f.dataInicioPlanejada):'--'} → ${f.dataFimPlanejada?dfmt(f.dataFimPlanejada):'--'}${preds.length?' · Depende de: '+preds.join(', '):''}${f.equipeResponsavel?' · '+escapeHtml(f.equipeResponsavel):''}</div>
-      </div>
-      <button data-frente-rm="${f.id}" class="text-red-500 hover:text-red-700 shrink-0" title="Excluir frente">🗑️</button>
-    </div>`;
-  }).join('');
-  wrap.querySelectorAll('[data-frente-rm]').forEach(b=>b.addEventListener('click',()=>{
-    const id=b.dataset.frenteRm;
-    if(p.aquisicoes.some(a=>a.frenteRelacionadaId===id)){alert('Essa frente está ligada a um ou mais itens de aquisição. Desvincule ou exclua esses itens primeiro.');return;}
-    if(!confirm('Excluir esta frente?'))return;
-    p.frentes=p.frentes.filter(x=>x.id!==id);
-    saveData();renderFrentesList();
-  }));
 }
 const AQ_STATUS_LABEL={a_pedir:'A pedir',pedido:'Pedido',em_transito:'Em trânsito',recebido:'Recebido',aplicado:'Aplicado'};
 function renderAquisicoesTable(){
@@ -4758,7 +4714,7 @@ function renderAquisicoesTable(){
   const tbody=g('tbodyAquisicoes');
   g('aquisicoesVazio').style.display=lista.length?'none':'';
   tbody.innerHTML=lista.map(a=>{
-    const frente=p.frentes.find(f=>f.id===a.frenteRelacionadaId);
+    const tarefa=(p.tasks||[]).find(t=>t.id===a.tarefaRelacionadaId);
     const diasRestantes=a.dataLimitePedido?diasEntre(a.dataLimitePedido,TODAY):null;
     const naoFinalizado=a.status!=='recebido'&&a.status!=='aplicado';
     let corLinha='';
@@ -4769,7 +4725,7 @@ function renderAquisicoesTable(){
     const badgeFornecedor=a.fornecidoPor==='beng'?'<span class="badge b-blue">SAVA</span>':'<span class="badge b-amber">Cliente</span>';
     return `<tr style="${corLinha}" class="border-b border-slate-100 dark:border-slate-800">
       <td class="p-2">${escapeHtml(a.descricao)}${a.fornecedor?`<div class="text-[10px] text-slate-400">${escapeHtml(a.fornecedor)}</div>`:''}</td>
-      <td class="p-2 text-slate-500">${frente?escapeHtml(frente.nome):'—'}</td>
+      <td class="p-2 text-slate-500">${tarefa?escapeHtml(tarefa.name)+(tarefa.stage?` <span class="text-slate-400">(${escapeHtml(tarefa.stage)})</span>`:''):'—'}</td>
       <td class="p-2 text-center">${badgeFornecedor}</td>
       <td class="p-2 text-center">${a.dataNecessidade?dfmt(a.dataNecessidade):'—'}</td>
       <td class="p-2 text-center font-semibold">${a.dataLimitePedido?dfmt(a.dataLimitePedido):'—'}</td>
@@ -4793,37 +4749,19 @@ function renderAquisicoesTable(){
 }
 qa('.aq-filtro-btn').forEach(b=>b.addEventListener('click',()=>{aqFiltroAtivo=b.dataset.aqfiltro;renderAquisicoesTable();}));
 
-function abrirModalFrente(){
-  const p=proj();if(!p)return;
-  g('frNome').value='';g('frFase').value='';g('frInicio').value='';g('frFim').value='';
-  g('frEquipe').value='';g('frCusto').value='';g('frMarco').checked=false;
-  g('frPredecessorasCheck').innerHTML=(p.frentes||[]).length?p.frentes.map(f=>`<label class="flex items-center gap-2"><input type="checkbox" value="${f.id}" class="fr-pred-check">${escapeHtml(f.nome)}</label>`).join(''):'<p class="text-slate-400">Nenhuma outra frente cadastrada ainda.</p>';
-  g('modalFrente').style.display='flex';
-}
-function salvarFrente(){
-  const p=proj();if(!p)return;
-  const nome=g('frNome').value.trim();
-  if(!nome){alert('Informe o nome da frente.');return;}
-  if(!p.frentes)p.frentes=[];
-  const predecessoras=qa('.fr-pred-check:checked').map(c=>c.value);
-  p.frentes.push({
-    id:uid('frente'),nome,fase:g('frFase').value.trim(),
-    dataInicioPlanejada:g('frInicio').value||'',dataFimPlanejada:g('frFim').value||'',
-    predecessoras,equipeResponsavel:g('frEquipe').value.trim(),
-    custoPrevisto:Number(g('frCusto').value)||0,isMarco:g('frMarco').checked
-  });
-  saveData();
-  g('modalFrente').style.display='none';
-  renderFrentesList();
-}
-
 function abrirModalAquisicao(){
   const p=proj();if(!p)return;
   g('aqDescricao').value='';g('aqQtd').value='';g('aqUnidade').value='';
   g('aqFornecidoPor').value='beng';g('aqFornecedor').value='';g('aqLeadTime').value='0';
   g('aqDataNecessidade').value='';g('aqStatus').value='a_pedir';g('aqCriticidade').value='media';
   const sel=g('aqFrente');
-  sel.innerHTML='<option value="">Nenhuma</option>'+(p.frentes||[]).map(f=>`<option value="${f.id}">${escapeHtml(f.nome)}</option>`).join('');
+  // Agrupado por fase (mesma etapa já usada no cronograma), pra ficar fácil
+  // de achar o serviço certo numa obra com muitas tarefas.
+  const porFase={};
+  (p.tasks||[]).forEach(t=>{ (porFase[t.stage||'Sem fase']=porFase[t.stage||'Sem fase']||[]).push(t); });
+  sel.innerHTML='<option value="">Nenhum</option>'+Object.entries(porFase).map(([fase,tarefas])=>
+    `<optgroup label="${escapeHtml(fase)}">${tarefas.map(t=>`<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('')}</optgroup>`
+  ).join('');
   atualizarPreviewPrazoLimite();
   g('modalAquisicao').style.display='flex';
 }
@@ -4839,7 +4777,7 @@ function salvarAquisicao(){
   const dataNecessidade=g('aqDataNecessidade').value||'';
   const leadTimeDias=Number(g('aqLeadTime').value)||0;
   p.aquisicoes.push({
-    id:uid('aquis'),descricao,frenteRelacionadaId:g('aqFrente').value||null,
+    id:uid('aquis'),descricao,tarefaRelacionadaId:g('aqFrente').value||null,
     qtdNecessaria:Number(g('aqQtd').value)||0,unidade:g('aqUnidade').value.trim(),
     fornecidoPor:g('aqFornecidoPor').value,fornecedor:g('aqFornecedor').value.trim(),
     leadTimeDias,dataNecessidade,
@@ -8510,9 +8448,6 @@ function bindEvents(){
   });
   g('mtCancel').addEventListener('click',closeTaskModal);
   g('mtSave').addEventListener('click',saveTask);
-  g('btnNovaFrente').addEventListener('click',abrirModalFrente);
-  g('frCancel').addEventListener('click',()=>{g('modalFrente').style.display='none';});
-  g('frSave').addEventListener('click',salvarFrente);
   g('btnNovoItemAquisicao').addEventListener('click',abrirModalAquisicao);
   g('aqCancel').addEventListener('click',()=>{g('modalAquisicao').style.display='none';});
   g('aqSave').addEventListener('click',salvarAquisicao);
@@ -8520,8 +8455,8 @@ function bindEvents(){
   g('aqLeadTime').addEventListener('input',atualizarPreviewPrazoLimite);
   g('aqFrente').addEventListener('change',()=>{
     const p=proj();if(!p)return;
-    const frente=p.frentes.find(f=>f.id===g('aqFrente').value);
-    if(frente&&frente.dataInicioPlanejada){g('aqDataNecessidade').value=frente.dataInicioPlanejada;atualizarPreviewPrazoLimite();}
+    const tarefa=(p.tasks||[]).find(t=>t.id===g('aqFrente').value);
+    if(tarefa&&tarefa.startDate){g('aqDataNecessidade').value=tarefa.startDate;atualizarPreviewPrazoLimite();}
   });
   g('mtDelete').addEventListener('click',deleteTask);
   g('btnAplicarNovosDados').addEventListener('click',()=>{
